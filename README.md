@@ -1,136 +1,141 @@
-# Transactions App (Tenpistas)
+# Tenpistas — Transaction Management App
 
-A full-stack transaction management application built with Spring Boot and Next.js.
+A full-stack transaction management application with role-based access control, built with Spring Boot and Next.js.
 
 ## Tech Stack
 
-### Backend
-- Java 17
-- Spring Boot 4.0.3
-- Spring Data JPA
+**Backend**
+- Java 17 + Spring Boot 4.0.3
 - Spring Security with JWT authentication
-- PostgreSQL 15
+- Spring Data JPA + PostgreSQL 15
 - Springdoc OpenAPI (Swagger UI)
 - Lombok
 
-### Frontend
-- Next.js 16.1.6
-- React 19.2.3
+**Frontend**
+- Next.js 16.1.6 + React 19
 - TypeScript
 - TanStack Query (React Query)
 - React Hook Form + Zod validation
-- Axios
-- Tailwind CSS 4
+- Axios + Tailwind CSS 4
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Docker Desktop](https://www.docker.com/get-started) (includes Docker Compose)
 
-## Running the Application
-
-From the project root directory, run:
+## Quick Start
 
 ```bash
 docker-compose up --build
 ```
 
-This will start:
-- **PostgreSQL database** on port `5432`
-- **Backend API** on port `8080`
-- **Frontend UI** on port `3000`
-
-Once all services are running, open your browser and navigate to:
-```
-http://localhost:3000
-```
-
-## Access Points
+This starts three services:
 
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:3000 |
+| Frontend UI | http://localhost:3000 |
 | Backend API | http://localhost:8080/api |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
+| PostgreSQL | localhost:5432 |
 
-## API Endpoints
+Open http://localhost:3000 in your browser and register an account to get started.
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Login with username/password |
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/register/admin` | Register a new admin user |
+## Environment Variables
 
-### Transactions (requires authentication)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/transaction` | Get all transactions (admin: all, user: own) |
-| GET | `/api/transaction/{id}` | Get transaction by ID |
-| POST | `/api/transaction` | Create a new transaction |
-| PUT | `/api/transaction/{id}` | Update a transaction |
-| DELETE | `/api/transaction/{id}` | Delete a transaction |
+All variables have defaults and work out of the box. Override them with a `.env` file in the project root if needed.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://db:5432/transactions_db` | Database connection URL |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | `postgres` | Database password |
+| `JWT_SECRET` | *(built-in key)* | Secret for signing JWT tokens |
+| `JWT_EXPIRATION` | `86400000` | Token expiry in ms (24 hours) |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | Allowed CORS origins |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8080/api` | Backend API URL used by the frontend |
+
+## API Reference
+
+### Authentication — `/api/auth`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | None | Register a new regular user |
+| POST | `/api/auth/register/admin` | None | Register a new admin user |
+| POST | `/api/auth/login` | None | Login and receive a JWT token |
+
+### Transactions — `/api/transaction`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/transaction` | Required | List transactions (admin: all users; user: own only) |
+| GET | `/api/transaction/{id}` | Required | Get a single transaction by ID |
+| POST | `/api/transaction` | Required | Create a new transaction |
+| PUT | `/api/transaction/{id}` | Required | Update an existing transaction |
+| DELETE | `/api/transaction/{id}` | Required | Delete a transaction |
+
+### Transaction Statuses — `/api/status`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/status` | Required | List all available transaction statuses |
+
+### Users — `/api/users`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/users` | Admin only | List all users |
+
+Seeded statuses on startup: `PENDING`, `COMPLETED`, `CANCELLED`, `FAILED`.
+
+## Features
+
+- **JWT Authentication** — stateless login/register with token-based sessions
+- **Role-based Access** — admin users see all transactions; regular users see only their own
+- **Transaction CRUD** — create, read, update, and delete transactions with status tracking
+- **Input Validation** — validated on both frontend (Zod) and backend (Spring)
+- **Transaction Limit** — maximum 100 transactions per user
+- **Dark UI** — modern dark-themed dashboard
 
 ## Project Structure
 
 ```
 transactions-app/
-├── backend/                 # Spring Boot backend
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/tenpistas/transactions/
-│   │       │   ├── config/          # Configuration classes
-│   │       │   ├── controller/      # REST controllers
-│   │       │   ├── dto/             # Data transfer objects
-│   │       │   ├── entity/          # JPA entities
-│   │       │   ├── exception/      # Exception handling
-│   │       │   ├── repository/      # JPA repositories
-│   │       │   ├── security/       # Security config & JWT
-│   │       │   └── service/        # Business logic
-│   │       └── resources/
-│   │           └── application.properties
+├── backend/
+│   ├── src/main/java/com/tenpistas/transactions/
+│   │   ├── config/          # Security config, CORS, data seeder
+│   │   ├── controller/      # REST controllers (Auth, Transaction, Status, User)
+│   │   ├── dto/             # Request/response DTOs
+│   │   ├── entity/          # JPA entities (User, Transaction, TransactionStatus, Role)
+│   │   ├── exception/       # Global exception handling
+│   │   ├── repository/      # Spring Data JPA repositories
+│   │   ├── security/        # JWT filter, token utilities
+│   │   └── service/         # Business logic
 │   ├── Dockerfile
 │   └── pom.xml
 │
-├── frontend/               # Next.js frontend
+├── frontend/
 │   ├── src/
-│   │   ├── app/            # Next.js App Router pages
-│   │   ├── components/      # React components
-│   │   ├── context/        # React context providers
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── services/       # API client setup
-│   │   └── types/          # TypeScript type definitions
+│   │   ├── app/             # Next.js App Router pages (/, /login, /admin)
+│   │   ├── features/
+│   │   │   ├── auth/        # Auth context and login page
+│   │   │   ├── transactions/ # Transaction form, list, and hooks
+│   │   │   └── admin/       # Admin hooks and page
+│   │   └── shared/
+│   │       └── services/    # Axios API client
 │   ├── Dockerfile
-│   ├── package.json
-│   └── next.config.ts
+│   ├── next.config.ts
+│   └── package.json
 │
-└── docker-compose.yml      # Docker Compose orchestration
+└── docker-compose.yml
 ```
 
-## Features
-
-- **User Authentication**: JWT-based login/register system
-- **Role-based Access**: Admin users can view all transactions; regular users see only their own
-- **Transaction Management**: Create, read, update, and delete transactions
-- **Validation**: Both frontend and backend validation for all inputs
-- **Transaction Limits**: Maximum 100 transactions per user
-- **Dark Theme UI**: Modern dark-themed dashboard
-
-## Default Credentials
-
-The application includes a data seeder. Check `backend/src/main/java/com/tenpistas/transactions/config/DataSeeder.java` for any seeded users.
-
-## Stopping the Application
-
-To stop all services:
+## Stopping the App
 
 ```bash
+# Stop containers
 docker-compose down
-```
 
-To also remove the database volume:
-
-```bash
+# Stop and remove the database volume (resets all data)
 docker-compose down -v
 ```
 

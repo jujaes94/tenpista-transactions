@@ -36,18 +36,16 @@ public class Transaction {
     @Column(nullable = false)
     private String merchant;
 
+    @Column(length = 500)
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @NotNull(message = "Transaction date is required")
-    @FutureOrPresent(message = "Transaction date cannot be in the past")
+    @CreationTimestamp
     @Column(nullable = false, name = "transaction_date")
     private LocalDateTime transactionDate;
-
-    @CreationTimestamp
-    @Column(nullable = false, name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(nullable = false, name = "updated_at")

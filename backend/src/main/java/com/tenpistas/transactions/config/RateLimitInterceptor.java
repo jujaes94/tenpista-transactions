@@ -16,15 +16,22 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // Use IP address as client identifier
-        String clientId = request.getRemoteAddr();
-        
+        // Use X-Forwarded-For header when behind a proxy/load balancer, fallback to remote address
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        String clientId;
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            // X-Forwarded-For can contain a comma-separated list; take the first (original) IP
+            clientId = xForwardedFor.split(",")[0].trim();
+        } else {
+            clientId = request.getRemoteAddr();
+        }
+
         if (!rateLimiterService.isAllowed(clientId)) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.getWriter().write("Rate limit exceeded. Try again later.");
             return false;
         }
-        
+
         return true;
     }
 }

@@ -6,6 +6,7 @@ public record TransactionResponse(
     Integer id,
     Integer amount,
     String merchant,
+    String description,
     String userName,
     LocalDateTime transactionDate,
     TransactionStatusDto status

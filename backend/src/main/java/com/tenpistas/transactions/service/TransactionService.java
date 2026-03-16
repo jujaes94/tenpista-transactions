@@ -6,6 +6,7 @@ import com.tenpistas.transactions.entity.Role;
 import com.tenpistas.transactions.entity.Transaction;
 import com.tenpistas.transactions.entity.TransactionStatus;
 import com.tenpistas.transactions.entity.User;
+import com.tenpistas.transactions.exception.AccessDeniedException;
 import com.tenpistas.transactions.exception.MaxTransactionsExceededException;
 import com.tenpistas.transactions.exception.ResourceNotFoundException;
 import com.tenpistas.transactions.repository.TransactionRepository;
@@ -40,7 +41,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public List<TransactionResponse> getTransactionsByUserId(Integer userId, User currentUser) {
         if (currentUser.getRole() != Role.ADMIN) {
-            throw new ResourceNotFoundException("Access denied");
+            throw new AccessDeniedException("Access denied: admin role required");
         }
 
         List<Transaction> transactions = transactionRepository.findByUser_IdAndIsActiveTrue(userId);
@@ -63,7 +64,7 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request, User currentUser) {
-        long currentCount = transactionRepository.countByUser_Id(currentUser.getId());
+        long currentCount = transactionRepository.countByUser_IdAndIsActiveTrue(currentUser.getId());
 
         if (currentCount >= MAX_TRANSACTIONS_PER_USER) {
             throw new MaxTransactionsExceededException(
@@ -82,8 +83,8 @@ public class TransactionService {
         Transaction transaction = Transaction.builder()
                 .amount(request.amount())
                 .merchant(request.merchant())
+                .description(request.description())
                 .user(currentUser)
-                .transactionDate(request.transactionDate())
                 .status(status)
                 .build();
 
@@ -96,12 +97,13 @@ public class TransactionService {
         Transaction existingTransaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + id));
 
-        if (currentUser.getRole() != Role.ADMIN && !existingTransaction.getUser().getUsername().equals(currentUser.getUsername())) {
+        if (currentUser.getRole() != Role.ADMIN && !existingTransaction.getUser().getId().equals(currentUser.getId())) {
             throw new ResourceNotFoundException("Transaction not found with id: " + id);
         }
 
         existingTransaction.setAmount(request.amount());
         existingTransaction.setMerchant(request.merchant());
+        existingTransaction.setDescription(request.description());
 
         if (request.statusId() != null) {
             TransactionStatus status = transactionStatusRepository.findById(request.statusId())
@@ -116,7 +118,7 @@ public class TransactionService {
     @Transactional
     public TransactionResponse updateTransactionStatus(Integer id, Integer statusId, User currentUser) {
         if (currentUser.getRole() != Role.ADMIN) {
-            throw new ResourceNotFoundException("Access denied");
+            throw new AccessDeniedException("Access denied: admin role required");
         }
 
         Transaction existingTransaction = transactionRepository.findById(id)
@@ -136,7 +138,7 @@ public class TransactionService {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + id));
 
-        if (currentUser.getRole() != Role.ADMIN && !transaction.getUser().getUsername().equals(currentUser.getUsername())) {
+        if (currentUser.getRole() != Role.ADMIN && !transaction.getUser().getId().equals(currentUser.getId())) {
             throw new ResourceNotFoundException("Transaction not found with id: " + id);
         }
 
@@ -161,6 +163,7 @@ public class TransactionService {
                 transaction.getId(),
                 transaction.getAmount(),
                 transaction.getMerchant(),
+                transaction.getDescription(),
                 transaction.getUser().getUsername(),
                 transaction.getTransactionDate(),
                 statusDto

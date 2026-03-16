@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
 
-    long countByUser_Id(Integer userId);
+    long countByUser_IdAndIsActiveTrue(Integer userId);
 
     @EntityGraph(attributePaths = { "status", "user" })
     List<Transaction> findByUser_IdAndIsActiveTrue(Integer userId);

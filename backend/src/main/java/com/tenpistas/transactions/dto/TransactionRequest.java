@@ -1,11 +1,9 @@
 package com.tenpistas.transactions.dto;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.Size;
 
 public record TransactionRequest(
     @NotNull(message = "Amount is required")
@@ -15,9 +13,8 @@ public record TransactionRequest(
     @NotBlank(message = "Merchant is required")
     String merchant,
 
-    @NotNull(message = "Transaction date is required")
-    @FutureOrPresent(message = "Transaction date cannot be in the past")
-    LocalDateTime transactionDate,
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    String description,
 
     Integer statusId
 ) {}

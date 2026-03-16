@@ -84,6 +84,14 @@
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- H2 in-memory database for @SpringBootTest — avoids needing a live
+		     PostgreSQL during the Docker build phase (mvn package runs tests in
+		     an isolated build container where the DB service is not yet up). -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation-test</artifactId>
